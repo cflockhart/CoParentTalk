@@ -194,7 +194,7 @@ function Dashboard({ session, onLogout, onUpdateSession }: DashboardProps) {
   // Load from local storage or fallback to seed data, partitioned by familyId
   const [childrenProfiles, setChildrenProfiles] = useState<ChildProfile[]>(() => {
     const saved = localStorage.getItem(`ofw_children_${familyId}`);
-    return saved ? JSON.parse(saved) : defaultChildren;
+    return saved ? JSON.parse(saved) : (familyId === 'demo-family' ? defaultChildren : []);
   });
 
   const [events, setEvents] = useState<CalendarEvent[]>(() => {
