@@ -544,6 +544,32 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onLoginSuccess }) => {
                 David <span>Parent B (Demo)</span>
               </button>
             </div>
+            
+            <button 
+              type="button"
+              onClick={() => {
+                if (window.confirm("Are you sure you want to delete all custom accounts and reset the database to defaults?")) {
+                  localStorage.clear();
+                  window.location.reload();
+                }
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#ef4444',
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                textAlign: 'center',
+                marginTop: '4px',
+                textDecoration: 'underline',
+                transition: 'opacity 0.2s'
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.opacity = '0.8')}
+              onMouseOut={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              Reset Sandbox Database (Delete Custom Accounts)
+            </button>
           </div>
         )}
       </div>
