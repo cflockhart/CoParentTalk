@@ -31,7 +31,9 @@ const defaultChildren: ChildProfile[] = [
     clothingSizes: { shirt: '8Y', pants: '8Y', shoes: '2Y' },
     insuranceInfo: { provider: 'Blue Cross Blue Shield', policyNumber: 'BCB-8931298', groupNumber: '90210' },
     schoolInfo: { name: 'Sunset Elementary', teacher: 'Mrs. Davis', contact: '555-014-9922' },
-    contacts: { pediatrician: 'Dr. Sarah Stevens (555-019-3321)', dentist: 'Dr. Alan Mercer (555-012-4411)', emergency: 'Grandma Helen (555-010-4499)' }
+    contacts: { pediatrician: 'Dr. Sarah Stevens (555-019-3321)', dentist: 'Dr. Alan Mercer (555-012-4411)', emergency: 'Grandma Helen (555-010-4499)' },
+    approvalStatus: 'approved',
+    addedBy: 'sarah'
   },
   {
     id: 'lucas',
@@ -40,7 +42,9 @@ const defaultChildren: ChildProfile[] = [
     clothingSizes: { shirt: '5T', pants: '5T', shoes: '11C' },
     insuranceInfo: { provider: 'Blue Cross Blue Shield', policyNumber: 'BCB-8931298', groupNumber: '90210' },
     schoolInfo: { name: 'Sunny Days Preschool', teacher: 'Miss Garcia', contact: '555-011-8833' },
-    contacts: { pediatrician: 'Dr. Sarah Stevens (555-019-3321)', dentist: 'Dr. Alan Mercer (555-012-4411)', emergency: 'Grandma Helen (555-010-4499)' }
+    contacts: { pediatrician: 'Dr. Sarah Stevens (555-019-3321)', dentist: 'Dr. Alan Mercer (555-012-4411)', emergency: 'Grandma Helen (555-010-4499)' },
+    approvalStatus: 'approved',
+    addedBy: 'sarah'
   }
 ];
 
@@ -244,7 +248,7 @@ function Dashboard({ session, onLogout, onUpdateSession }: DashboardProps) {
   }, [emailTimeoutId]);
 
   const triggerEmailNotification = (
-    type: 'event' | 'message' | 'expense' | 'journal',
+    type: 'event' | 'message' | 'expense' | 'journal' | 'child_added' | 'child_approved' | 'child_rejected',
     itemDetails: any
   ) => {
     const recipientName = activeParent === 'sarah' ? parentNames.david : parentNames.sarah;
@@ -274,6 +278,15 @@ function Dashboard({ session, onLogout, onUpdateSession }: DashboardProps) {
     } else if (type === 'journal') {
       subject = `[CoParent Talk] Exchange check-in logged by ${senderName}`;
       body = `Hi ${recipientName},\n\n${senderName} has checked in and created a journal entry:\n\n- Title: ${itemDetails.title}\n- Location Verified: ${itemDetails.isCheckedIn ? 'GPS Verified Lock' : 'No GPS'}\n- Note: "${itemDetails.note}"\n\nLog in to review the shared log.`;
+    } else if (type === 'child_added') {
+      subject = `[CoParent Talk] Child profile added by ${senderName} (Pending Approval)`;
+      body = `Hi ${recipientName},\n\n${senderName} has added a new child profile to your workspace:\n\n- Name: ${itemDetails.name}\n- Birthdate: ${itemDetails.birthdate}\n\nFamily court guidelines require both parents to review and approve child details. Log in to CoParent Talk to approve or reject this child profile.`;
+    } else if (type === 'child_approved') {
+      subject = `[CoParent Talk] Child profile approved by ${senderName}`;
+      body = `Hi ${recipientName},\n\n${senderName} has approved the profile for "${itemDetails.name}". The child is now fully verified in your shared workspace.`;
+    } else if (type === 'child_rejected') {
+      subject = `[CoParent Talk] Child profile details rejected by ${senderName}`;
+      body = `Hi ${recipientName},\n\n${senderName} has rejected or declined the profile details for "${itemDetails.name}". Please discuss with ${senderName} directly to resolve the discrepancies.`;
     }
 
     if (emailTimeoutId) {
@@ -360,6 +373,31 @@ function Dashboard({ session, onLogout, onUpdateSession }: DashboardProps) {
   
   const updateChildProfile = (updated: ChildProfile) => {
     setChildrenProfiles(childrenProfiles.map(c => c.id === updated.id ? updated : c));
+  };
+
+  const addChildProfile = (child: ChildProfile) => {
+    setChildrenProfiles([...childrenProfiles, child]);
+    triggerEmailNotification('child_added', child);
+  };
+
+  const approveChildProfile = (childId: string) => {
+    const updated = childrenProfiles.map(c => {
+      if (c.id === childId) {
+        const approved = { ...c, approvalStatus: 'approved' as const };
+        triggerEmailNotification('child_approved', approved);
+        return approved;
+      }
+      return c;
+    });
+    setChildrenProfiles(updated);
+  };
+
+  const rejectChildProfile = (childId: string) => {
+    const child = childrenProfiles.find(c => c.id === childId);
+    if (child) {
+      triggerEmailNotification('child_rejected', child);
+    }
+    setChildrenProfiles(childrenProfiles.filter(c => c.id !== childId));
   };
 
   // Quick stats calculations for Home Dashboard
@@ -454,7 +492,11 @@ function Dashboard({ session, onLogout, onUpdateSession }: DashboardProps) {
           <InfoBankTab 
             childrenProfiles={childrenProfiles} 
             updateChildProfile={updateChildProfile} 
-            activeParent={activeParent} 
+            addChildProfile={addChildProfile}
+            approveChildProfile={approveChildProfile}
+            rejectChildProfile={rejectChildProfile}
+            activeParent={activeParent}
+            parentNames={parentNames}
           />
         );
       case 'export':
@@ -477,6 +519,33 @@ function Dashboard({ session, onLogout, onUpdateSession }: DashboardProps) {
               <h2>CoParent Talk Dashboard</h2>
               <p>Welcome back, {activeParent === 'sarah' ? parentNames.sarah : parentNames.david}. You have co-parenting updates.</p>
             </div>
+
+            {/* Child Profile Approval Quick Alert */}
+            {childrenProfiles.filter(c => c.approvalStatus === 'pending' && c.addedBy !== activeParent).map(child => (
+              <div 
+                key={child.id}
+                style={{ 
+                  background: 'rgba(59, 130, 246, 0.05)', 
+                  border: '1px solid var(--primary)', 
+                  borderRadius: 'var(--border-radius-md)', 
+                  padding: '12px 16px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px',
+                  boxShadow: 'var(--shadow-sm)',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setActiveTab('infobank')}
+              >
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <User size={16} />
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-primary)' }}>Child Approval Request</h4>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{child.name} has been added by {child.addedBy === 'sarah' ? parentNames.sarah : parentNames.david}. Click to review and approve details.</p>
+                </div>
+              </div>
+            ))}
 
             {/* Quick Alerts Banner */}
             {pendingSwapCount > 0 && (

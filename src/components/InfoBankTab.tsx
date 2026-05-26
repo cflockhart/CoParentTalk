@@ -1,16 +1,33 @@
-import React, { useState } from 'react';
-import { User, Phone, Shield, GraduationCap, Shirt, Edit2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Phone, Shield, GraduationCap, Shirt, Edit2, Plus, Check, X } from 'lucide-react';
 import type { ChildProfile, ParentId } from '../types';
 
 interface InfoBankTabProps {
   childrenProfiles: ChildProfile[];
   updateChildProfile: (profile: ChildProfile) => void;
+  addChildProfile: (profile: ChildProfile) => void;
+  approveChildProfile: (childId: string) => void;
+  rejectChildProfile: (childId: string) => void;
   activeParent: ParentId;
+  parentNames: { sarah: string; david: string };
 }
 
-export const InfoBankTab: React.FC<InfoBankTabProps> = ({ childrenProfiles, updateChildProfile }) => {
+export const InfoBankTab: React.FC<InfoBankTabProps> = ({ 
+  childrenProfiles, 
+  updateChildProfile,
+  addChildProfile,
+  approveChildProfile,
+  rejectChildProfile,
+  activeParent,
+  parentNames
+}) => {
   const [selectedChildId, setSelectedChildId] = useState<string>(childrenProfiles[0]?.id || '');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  // Add child form state
+  const [newChildName, setNewChildName] = useState('');
+  const [newChildBirthdate, setNewChildBirthdate] = useState('');
 
   // Edit form state
   const [editShirt, setEditShirt] = useState('');
@@ -28,6 +45,18 @@ export const InfoBankTab: React.FC<InfoBankTabProps> = ({ childrenProfiles, upda
   const [editPediatrician, setEditPediatrician] = useState('');
   const [editDentist, setEditDentist] = useState('');
   const [editEmergency, setEditEmergency] = useState('');
+
+  // Ensure a child is selected when list changes or child is added
+  useEffect(() => {
+    if (childrenProfiles.length > 0) {
+      const exists = childrenProfiles.some(c => c.id === selectedChildId);
+      if (!exists || !selectedChildId) {
+        setSelectedChildId(childrenProfiles[0].id);
+      }
+    } else {
+      setSelectedChildId('');
+    }
+  }, [childrenProfiles, selectedChildId]);
 
   const activeChild = childrenProfiles.find(c => c.id === selectedChildId);
 
@@ -85,6 +114,29 @@ export const InfoBankTab: React.FC<InfoBankTabProps> = ({ childrenProfiles, upda
     setShowEditModal(false);
   };
 
+  const handleAddChildSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newChildName.trim()) return;
+
+    const newChild: ChildProfile = {
+      id: 'child-' + Date.now(),
+      name: newChildName.trim(),
+      birthdate: newChildBirthdate || new Date().toISOString().split('T')[0],
+      clothingSizes: { shirt: '', pants: '', shoes: '' },
+      insuranceInfo: { provider: '', policyNumber: '', groupNumber: '' },
+      schoolInfo: { name: '', teacher: '', contact: '' },
+      contacts: { pediatrician: '', dentist: '', emergency: '' },
+      approvalStatus: 'pending',
+      addedBy: activeParent
+    };
+
+    addChildProfile(newChild);
+    setSelectedChildId(newChild.id);
+    setNewChildName('');
+    setNewChildBirthdate('');
+    setShowAddModal(false);
+  };
+
   const calculateAge = (birthdate: string) => {
     const today = new Date();
     const birthDate = new Date(birthdate);
@@ -100,31 +152,136 @@ export const InfoBankTab: React.FC<InfoBankTabProps> = ({ childrenProfiles, upda
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
       {/* Children switch pills */}
-      <div style={{ display: 'flex', gap: '8px', background: 'var(--bg-card)', padding: '6px', borderRadius: '50px', border: '1px solid var(--border-light)' }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        background: 'var(--bg-card)', 
+        padding: '6px', 
+        borderRadius: '50px', 
+        border: '1px solid var(--border-light)',
+        alignItems: 'center',
+        overflowX: 'auto',
+        maxWidth: '100%'
+      }}>
         {childrenProfiles.map(child => (
           <button
             key={child.id}
             onClick={() => setSelectedChildId(child.id)}
             style={{
-              flex: 1,
+              padding: '8px 16px',
               border: 'none',
-              padding: '8px 12px',
               borderRadius: '50px',
               fontWeight: 700,
               fontSize: '0.8rem',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               background: selectedChildId === child.id ? 'var(--primary)' : 'transparent',
-              color: selectedChildId === child.id ? 'white' : 'var(--text-secondary)'
+              color: selectedChildId === child.id ? 'white' : 'var(--text-secondary)',
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
             }}
           >
-            {child.name} (Age {calculateAge(child.birthdate)})
+            {child.name}
+            {child.approvalStatus === 'pending' && <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>⏳</span>}
           </button>
         ))}
+        <button
+          onClick={() => setShowAddModal(true)}
+          style={{
+            background: 'rgba(59, 130, 246, 0.08)',
+            border: '1px dashed var(--primary)',
+            color: 'var(--primary)',
+            padding: '8px 16px',
+            borderRadius: '50px',
+            fontWeight: 700,
+            fontSize: '0.8rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <Plus size={14} /> Add Child
+        </button>
       </div>
 
       {activeChild ? (
         <div className="info-card-grid">
+          
+          {/* Pending Child Approval Banner */}
+          {activeChild.approvalStatus === 'pending' && (
+            <div style={{
+              gridColumn: '1 / -1',
+              background: activeChild.addedBy === activeParent ? 'rgba(59, 130, 246, 0.05)' : 'rgba(245, 158, 11, 0.05)',
+              border: `1px solid ${activeChild.addedBy === activeParent ? 'var(--primary)' : 'var(--warning)'}`,
+              borderRadius: 'var(--border-radius-md)',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              boxShadow: 'var(--shadow-sm)'
+            }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
+                  ⏳ Child Profile Pending Approval
+                </h4>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                  {activeChild.addedBy === activeParent ? (
+                    `You added ${activeChild.name}. Awaiting review and approval from your co-parent (${activeParent === 'sarah' ? parentNames.david : parentNames.sarah}).`
+                  ) : (
+                    `${activeChild.addedBy === 'sarah' ? parentNames.sarah : parentNames.david} registered ${activeChild.name}'s profile. Under shared-parenting rules, please verify and approve these details.`
+                  )}
+                </p>
+              </div>
+
+              {activeChild.addedBy !== activeParent && (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => approveChildProfile(activeChild.id)}
+                    style={{
+                      background: 'var(--success)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: 'var(--border-radius-sm)',
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'background 0.2s'
+                    }}
+                  >
+                    <Check size={14} /> Approve Details
+                  </button>
+                  <button
+                    onClick={() => rejectChildProfile(activeChild.id)}
+                    style={{
+                      background: 'var(--danger)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: 'var(--border-radius-sm)',
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'background 0.2s'
+                    }}
+                  >
+                    <X size={14} /> Decline Profile
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           
           {/* Header Card with Child Overview */}
           <div className="info-item-card" style={{ background: 'linear-gradient(135deg, var(--primary-light), white)', borderColor: 'var(--primary)' }}>
@@ -135,7 +292,7 @@ export const InfoBankTab: React.FC<InfoBankTabProps> = ({ childrenProfiles, upda
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1rem', fontFamily: 'Outfit', fontWeight: 700 }}>{activeChild.name}</h3>
-                  <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Born: {activeChild.birthdate}</p>
+                  <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Born: {activeChild.birthdate} (Age {calculateAge(activeChild.birthdate)})</p>
                 </div>
               </div>
               <button 
@@ -323,6 +480,53 @@ export const InfoBankTab: React.FC<InfoBankTabProps> = ({ childrenProfiles, upda
 
               <button type="submit" className="form-submit-btn">
                 Save Profile Changes
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Child Modal Sheet */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Add Child Profile</h3>
+              <button className="modal-close-btn" onClick={() => setShowAddModal(false)}>Close</button>
+            </div>
+            
+            <form onSubmit={handleAddChildSubmit}>
+              <div className="form-group">
+                <label className="form-label">Child's Name</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  value={newChildName} 
+                  onChange={e => setNewChildName(e.target.value)} 
+                  placeholder="e.g. Liam"
+                  required 
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">Child's Birthdate</label>
+                <input 
+                  type="date" 
+                  className="form-input" 
+                  value={newChildBirthdate} 
+                  onChange={e => setNewChildBirthdate(e.target.value)} 
+                  required 
+                />
+              </div>
+
+              <div style={{ marginTop: '12px', background: 'rgba(2, 132, 199, 0.05)', border: '1px solid rgba(2, 132, 199, 0.2)', padding: '12px', borderRadius: 'var(--border-radius-sm)' }}>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                  <strong>Note:</strong> Under parenting agreement policies, new child profiles start as <strong>Pending Approval</strong>. Your co-parent will be notified to review and approve the child's details.
+                </p>
+              </div>
+
+              <button type="submit" className="form-submit-btn" style={{ marginTop: '16px' }}>
+                Add Child Profile
               </button>
             </form>
           </div>

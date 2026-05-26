@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, User, Users, Shield, ArrowRight, Sparkles } from 'lucide-react';
-import type { ParentId } from '../types';
+import type { ParentId, ChildProfile } from '../types';
 
 interface AuthGateProps {
   onLoginSuccess: (session: { name: string; email: string; role: ParentId; familyId: string }) => void;
@@ -39,6 +39,8 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onLoginSuccess }) => {
   const [coParentEmail, setCoParentEmail] = useState('');
   const [coParentName, setCoParentName] = useState('');
   const [inviteCoParent, setInviteCoParent] = useState(false);
+  const [childName, setChildName] = useState('');
+  const [childBirthdate, setChildBirthdate] = useState('');
 
   // Invitation Mode State
   const [inviteCode, setInviteCode] = useState<string | null>(null);
@@ -268,6 +270,23 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onLoginSuccess }) => {
           generatedLink = `${origin}?inviteCode=${newInviteId}`;
         }
 
+        // Create Child Profile if added during registration
+        const newChildren: ChildProfile[] = [];
+        if (childName.trim()) {
+          newChildren.push({
+            id: 'child-' + Date.now(),
+            name: childName.trim(),
+            birthdate: childBirthdate || new Date().toISOString().split('T')[0],
+            clothingSizes: { shirt: '', pants: '', shoes: '' },
+            insuranceInfo: { provider: '', policyNumber: '', groupNumber: '' },
+            schoolInfo: { name: '', teacher: '', contact: '' },
+            contacts: { pediatrician: '', dentist: '', emergency: '' },
+            approvalStatus: 'pending',
+            addedBy: 'sarah'
+          });
+        }
+        localStorage.setItem(`ofw_children_${newFamilyId}`, JSON.stringify(newChildren));
+
         // Write users and families to localStorage
         users.push(newUser);
         localStorage.setItem('coparent_users', JSON.stringify(users));
@@ -417,6 +436,42 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onLoginSuccess }) => {
                     value={familyName}
                     onChange={(e) => setFamilyName(e.target.value)}
                     required
+                  />
+                </div>
+              </div>
+
+              {/* Optional Child Details */}
+              <div style={{
+                marginTop: '16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+                borderRadius: 'var(--border-radius-sm)',
+                padding: '14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <span style={{ fontSize: '0.75rem', color: 'hsl(220 20% 85%)', fontWeight: 600 }}>Add Child Details (Optional)</span>
+                <p style={{ margin: 0, fontSize: '0.7rem', color: 'hsl(220 20% 70%)', lineHeight: 1.3 }}>
+                  You can register a child profile now. This will require co-parent approval upon connection.
+                </p>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="auth-label" style={{ fontSize: '0.7rem' }}>Child's Name</label>
+                  <input
+                    type="text"
+                    className="auth-input"
+                    placeholder="e.g. Emma"
+                    value={childName}
+                    onChange={(e) => setChildName(e.target.value)}
+                  />
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="auth-label" style={{ fontSize: '0.7rem' }}>Child's Birthdate</label>
+                  <input
+                    type="date"
+                    className="auth-input"
+                    value={childBirthdate}
+                    onChange={(e) => setChildBirthdate(e.target.value)}
                   />
                 </div>
               </div>

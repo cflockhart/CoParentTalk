@@ -24,6 +24,8 @@ export interface ChildProfile {
     dentist: string;
     emergency: string;
   };
+  approvalStatus: 'pending' | 'approved';
+  addedBy: ParentId;
 }
 
 export interface CalendarEvent {
