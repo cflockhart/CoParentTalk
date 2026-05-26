@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Phone, Shield, GraduationCap, Shirt, Edit2, Plus, Check, X } from 'lucide-react';
+import { User, Phone, Shield, GraduationCap, Shirt, Edit2, Plus, Check, X, Mail } from 'lucide-react';
 import type { ChildProfile, ParentId } from '../types';
 
 interface InfoBankTabProps {
@@ -28,6 +28,21 @@ export const InfoBankTab: React.FC<InfoBankTabProps> = ({
   // Add child form state
   const [newChildName, setNewChildName] = useState('');
   const [newChildBirthdate, setNewChildBirthdate] = useState('');
+
+  // EmailJS settings state
+  const [serviceId, setServiceId] = useState(() => localStorage.getItem('emailjs_service_id') || '');
+  const [templateId, setTemplateId] = useState(() => localStorage.getItem('emailjs_template_id') || '');
+  const [publicKey, setPublicKey] = useState(() => localStorage.getItem('emailjs_public_key') || '');
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  const handleSaveEmailSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('emailjs_service_id', serviceId.trim());
+    localStorage.setItem('emailjs_template_id', templateId.trim());
+    localStorage.setItem('emailjs_public_key', publicKey.trim());
+    setSaveStatus('Integration settings saved successfully!');
+    setTimeout(() => setSaveStatus(null), 3000);
+  };
 
   // Edit form state
   const [editShirt, setEditShirt] = useState('');
@@ -398,6 +413,91 @@ export const InfoBankTab: React.FC<InfoBankTabProps> = ({
       ) : (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No child profiles found.</p>
       )}
+
+      {/* EmailJS Integration Settings */}
+      <div 
+        style={{ 
+          background: 'var(--bg-card)', 
+          border: '1px solid var(--border-light)', 
+          borderRadius: 'var(--border-radius-md)', 
+          padding: '20px',
+          boxShadow: 'var(--shadow-sm)',
+          marginTop: '8px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <Mail size={18} style={{ color: 'var(--primary)' }} />
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontFamily: 'Outfit', fontWeight: 700 }}>📬 Real Email Alert Integration (EmailJS)</h3>
+        </div>
+        
+        <p style={{ margin: '0 0 16px 0', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+          Connect your GMail/EmailJS account to send real email notifications to the co-parent when schedule events, messages, expenses, or check-ins are added. Setup a free account at <strong>emailjs.com</strong>.
+        </p>
+
+        {saveStatus && (
+          <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success)', padding: '10px', borderRadius: 'var(--border-radius-sm)', color: 'var(--success)', fontSize: '0.75rem', fontWeight: 600, marginBottom: '14px' }}>
+            ✅ {saveStatus}
+          </div>
+        )}
+
+        <form onSubmit={handleSaveEmailSettings} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" style={{ fontSize: '0.7rem', fontWeight: 700 }}>EmailJS Service ID</label>
+            <input 
+              type="text" 
+              className="form-input" 
+              value={serviceId} 
+              onChange={e => setServiceId(e.target.value)} 
+              placeholder="e.g. service_xxxxxx"
+            />
+          </div>
+
+          <div className="form-row-2">
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontSize: '0.7rem', fontWeight: 700 }}>EmailJS Template ID</label>
+              <input 
+                type="text" 
+                className="form-input" 
+                value={templateId} 
+                onChange={e => setTemplateId(e.target.value)} 
+                placeholder="e.g. template_xxxxxx"
+              />
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontSize: '0.7rem', fontWeight: 700 }}>EmailJS Public Key</label>
+              <input 
+                type="text" 
+                className="form-input" 
+                value={publicKey} 
+                onChange={e => setPublicKey(e.target.value)} 
+                placeholder="e.g. user_xxxxxxxxxxxxxx"
+              />
+            </div>
+          </div>
+
+          <div style={{ background: 'rgba(2, 132, 199, 0.04)', border: '1px solid rgba(2, 132, 199, 0.1)', padding: '10px 12px', borderRadius: '6px', fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+            <strong>EmailJS Template Configuration Guide:</strong> Setup a template in EmailJS with variables matching exactly: 
+            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{to_email}}"}</code>, 
+            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{to_name}}"}</code>, 
+            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{from_name}}"}</code>, 
+            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{subject}}"}</code>, and 
+            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{message}}"}</code>.
+          </div>
+
+          <button 
+            type="submit" 
+            className="form-submit-btn" 
+            style={{ 
+              margin: 0, 
+              background: serviceId && templateId && publicKey ? 'var(--primary)' : 'rgba(59, 130, 246, 0.1)',
+              color: serviceId && templateId && publicKey ? 'white' : 'var(--text-secondary)',
+              border: serviceId && templateId && publicKey ? 'none' : '1px solid var(--border-light)'
+            }}
+          >
+            Save EmailJS Credentials
+          </button>
+        </form>
+      </div>
 
       {/* Edit Child Info Modal Sheet */}
       {showEditModal && activeChild && (

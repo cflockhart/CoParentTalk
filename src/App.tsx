@@ -300,6 +300,42 @@ function Dashboard({ session, onLogout, onUpdateSession }: DashboardProps) {
       body
     });
 
+    // Dispatch actual EmailJS notification if credentials are set
+    const emailJsServiceId = localStorage.getItem('emailjs_service_id') || import.meta.env.VITE_EMAILJS_SERVICE_ID || '';
+    const emailJsTemplateId = localStorage.getItem('emailjs_template_id') || import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '';
+    const emailJsPublicKey = localStorage.getItem('emailjs_public_key') || import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '';
+
+    if (emailJsServiceId && emailJsTemplateId && emailJsPublicKey) {
+      fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          service_id: emailJsServiceId,
+          template_id: emailJsTemplateId,
+          user_id: emailJsPublicKey,
+          template_params: {
+            to_email: recipientEmail,
+            to_name: recipientName,
+            from_name: senderName,
+            subject: subject,
+            message: body
+          }
+        })
+      })
+      .then(res => {
+        if (!res.ok) {
+          console.error('EmailJS Send error:', res.statusText);
+        } else {
+          console.log('Email successfully dispatched via EmailJS!');
+        }
+      })
+      .catch(err => {
+        console.error('EmailJS Fetch Exception:', err);
+      });
+    }
+
     const timeout = window.setTimeout(() => {
       setSentEmailNotification(null);
     }, 7000);
