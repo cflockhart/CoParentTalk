@@ -409,6 +409,13 @@ function Dashboard({ session, onLogout, onUpdateSession }: DashboardProps) {
 
   const unreadMessageCount = messages.filter(m => !m.readBy.includes(activeParent)).length;
 
+  const nextEvent = [...events]
+    .filter(e => {
+      const eventDate = new Date(e.date + 'T23:59:59');
+      return eventDate.getTime() >= new Date().setHours(0,0,0,0);
+    })
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''))[0];
+
   const calculateOwedBalance = () => {
     let balance = 0;
     expenses.forEach(e => {
@@ -632,13 +639,22 @@ function Dashboard({ session, onLogout, onUpdateSession }: DashboardProps) {
                 boxShadow: 'var(--shadow-sm)',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                cursor: nextEvent ? 'pointer' : 'default'
               }}
+              onClick={() => nextEvent && setActiveTab('calendar')}
             >
               <div>
                 <h4 style={{ margin: '0 0 4px 0', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Next Event</h4>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>Emma Dentist Checkup</p>
-                <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>May 15, 2026 @ 2:00 PM</p>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>
+                  {nextEvent ? nextEvent.title : 'No Upcoming Events'}
+                </p>
+                <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  {nextEvent 
+                    ? `${new Date(nextEvent.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}${nextEvent.time ? ` @ ${nextEvent.time}` : ''}`
+                    : 'Use the calendar tab to schedule'
+                  }
+                </p>
               </div>
               <CalendarIcon size={24} style={{ color: 'var(--primary)' }} />
             </div>
