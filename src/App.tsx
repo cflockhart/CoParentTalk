@@ -319,6 +319,8 @@ function Dashboard({ session, onLogout, onUpdateSession }: DashboardProps) {
             to_email: recipientEmail,
             to_name: recipientName,
             from_name: senderName,
+            name: senderName,
+            time: new Date().toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' }),
             subject: subject,
             message: body
           }

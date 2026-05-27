@@ -476,12 +476,10 @@ export const InfoBankTab: React.FC<InfoBankTabProps> = ({
           </div>
 
           <div style={{ background: 'rgba(2, 132, 199, 0.04)', border: '1px solid rgba(2, 132, 199, 0.1)', padding: '10px 12px', borderRadius: '6px', fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
-            <strong>EmailJS Template Configuration Guide:</strong> Setup a template in EmailJS with variables matching exactly: 
-            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{to_email}}"}</code>, 
-            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{to_name}}"}</code>, 
-            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{from_name}}"}</code>, 
-            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{subject}}"}</code>, and 
-            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{message}}"}</code>.
+            <strong>EmailJS Template Configuration Guide:</strong> In your template settings, set the recipient to <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{to_email}}"}</code> and subject to <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{subject}}"}</code>. Your HTML body should contain variables matching exactly: 
+            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{name}}"}</code> (sender name), 
+            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{time}}"}</code> (date/time), and 
+            <code style={{ background: 'rgba(0,0,0,0.06)', padding: '1px 3px', borderRadius: '3px', margin: '0 2px', fontFamily: 'monospace' }}>{"{{message}}"}</code> (detailed notification body).
           </div>
 
           <button 
